@@ -46,8 +46,8 @@ describe("import strategies", () => {
 		expect(strategy?.id).toBe("scotia-credit-csv");
 	});
 
-	it("parses Neo credit spending as negative amounts", () => {
-		const { transactions } = importWithAutoDetect({
+	it("parses Neo credit spending as negative amounts", async () => {
+		const { transactions } = await importWithAutoDetect({
 			filename: "neo-credit-small.csv",
 			text: load("neo-credit-small.csv"),
 		});
@@ -61,8 +61,8 @@ describe("import strategies", () => {
 		expect(payment?.amountCents).toBe(7790);
 	});
 
-	it("normalizes Scotia credit Debit purchases to outflows", () => {
-		const { transactions } = importWithAutoDetect({
+	it("normalizes Scotia credit Debit purchases to outflows", async () => {
+		const { transactions } = await importWithAutoDetect({
 			filename: "scotia-credit.csv",
 			text: load("scotia-credit.csv"),
 		});
@@ -72,8 +72,8 @@ describe("import strategies", () => {
 		expect(apple?.amountCents).toBeLessThan(0);
 	});
 
-	it("dedupes identical fingerprints within a batch", () => {
-		const { transactions } = importWithAutoDetect({
+	it("dedupes identical fingerprints within a batch", async () => {
+		const { transactions } = await importWithAutoDetect({
 			filename: "neo-credit-small.csv",
 			text: load("neo-credit-small.csv"),
 		});
@@ -83,19 +83,55 @@ describe("import strategies", () => {
 		expect(duplicateCount).toBe(transactions.length);
 	});
 
-	it("keeps Neo Everyday PDF as a detectable skeleton", () => {
+	it("reads a Neo Everyday PDF statement", async () => {
+		const { PDFDocument, StandardFonts } = await import("pdf-lib");
+		const doc = await PDFDocument.create();
+		const page = doc.addPage([700, 800]);
+		const font = await doc.embedFont(StandardFonts.Helvetica);
+		const rows = [
+			["Date", "Description", "Money out", "Money in", "Balance"],
+			["Oct 5, 2026", "Wise Canada", "$300.00", "", "$900.00"],
+			[
+				"Oct 13, 2026",
+				"Transfer from NEO FINANCIAL T",
+				"",
+				"$2,420.23",
+				"$3,320.23",
+			],
+			["Oct 31, 2026", "Tim Hortons", "$14.35", "", "$3,305.88"],
+		];
+		const xs = [48, 160, 380, 470, 560];
+		let y = 700;
+		page.drawText("Neo Everyday", { x: 48, y: 750, size: 16, font });
+		for (const row of rows) {
+			row.forEach((cell, index) => {
+				if (!cell) return;
+				page.drawText(cell, { x: xs[index] ?? 48, y, size: 11, font });
+			});
+			y -= 24;
+		}
+
+		const bytes = await doc.save();
 		expect(
 			neoEverydayPdfStrategy.canParse({
-				filename: "neo-everyday-oct.pdf",
-				text: "%PDF Neo Everyday statement",
+				filename: "statement.pdf",
+				text: "",
+				bytes,
 				headers: [],
 			}),
 		).toBe(true);
-		expect(() =>
-			neoEverydayPdfStrategy.parse({
-				filename: "neo-everyday-oct.pdf",
-				text: "%PDF",
-			}),
-		).toThrow(/not implemented/i);
+
+		const transactions = await neoEverydayPdfStrategy.parse({
+			filename: "statement.pdf",
+			text: "",
+			bytes,
+		});
+		const wise = transactions.find((tx) => tx.description.includes("Wise"));
+		const pay = transactions.find((tx) =>
+			tx.description.includes("NEO FINANCIAL"),
+		);
+		expect(wise?.amountCents).toBe(-30000);
+		expect(pay?.amountCents).toBe(242023);
+		expect(transactions).toHaveLength(3);
 	});
 });

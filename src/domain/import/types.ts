@@ -21,6 +21,7 @@ export type ParsedTransaction = {
 export type ImportInput = {
 	filename: string;
 	text: string;
+	bytes?: Uint8Array;
 };
 
 export type ImportStrategy = {
@@ -32,5 +33,7 @@ export type ImportStrategy = {
 		kind: "credit" | "chequing" | "everyday";
 	};
 	canParse: (input: ImportInput & { headers: string[] }) => boolean;
-	parse: (input: ImportInput) => ParsedTransaction[];
+	parse: (
+		input: ImportInput,
+	) => ParsedTransaction[] | Promise<ParsedTransaction[]>;
 };

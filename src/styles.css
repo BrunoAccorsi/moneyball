@@ -295,8 +295,10 @@ html.dark .mb-for-light {
 		transform 160ms ease;
 }
 
-.mb-dropzone:hover {
+.mb-dropzone:hover,
+.mb-dropzone-active {
 	border-color: var(--primary);
+	background: color-mix(in oklab, var(--accent) 70%, var(--card));
 	transform: translateY(-1px);
 }
 

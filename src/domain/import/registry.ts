@@ -12,12 +12,16 @@ export const importStrategies: ImportStrategy[] = [
 	neoEverydayPdfStrategy,
 ];
 
+function looksLikePdf(input: ImportInput): boolean {
+	if (input.filename.toLowerCase().endsWith(".pdf")) return true;
+	if (input.text.startsWith("%PDF")) return true;
+	return Boolean(input.bytes && input.bytes[0] === 0x25);
+}
+
 export function detectImportStrategy(
 	input: ImportInput,
 ): ImportStrategy | null {
-	const headers = input.filename.toLowerCase().endsWith(".pdf")
-		? []
-		: parseCsvRows(input.text).headers;
+	const headers = looksLikePdf(input) ? [] : parseCsvRows(input.text).headers;
 
 	for (const strategy of importStrategies) {
 		if (strategy.canParse({ ...input, headers })) {
@@ -28,10 +32,10 @@ export function detectImportStrategy(
 	return null;
 }
 
-export function importWithAutoDetect(input: ImportInput): {
+export async function importWithAutoDetect(input: ImportInput): Promise<{
 	strategy: ImportStrategy;
 	transactions: ParsedTransaction[];
-} {
+}> {
 	const strategy = detectImportStrategy(input);
 	if (!strategy) {
 		throw new Error(
@@ -41,7 +45,7 @@ export function importWithAutoDetect(input: ImportInput): {
 
 	return {
 		strategy,
-		transactions: strategy.parse(input),
+		transactions: await strategy.parse(input),
 	};
 }
 

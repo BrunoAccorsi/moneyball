@@ -42,7 +42,7 @@ Strategy pattern under `src/domain/import`:
 - `neo-credit-csv` — Neo credit card CSV
 - `scotia-chequing-csv` — Scotiabank chequing CSV
 - `scotia-credit-csv` — Scotiabank credit CSV
-- `neo-everyday-pdf` — skeleton only (detects, does not parse)
+- `neo-everyday-pdf` — Neo Everyday PDF statements
 
 Auto-detection picks a strategy from headers. Imports dedupe by fingerprint.
 
@@ -60,5 +60,4 @@ Tokens live in `src/styles/theme.css` (synced from `public/brand/theme.css`). UI
 
 ## Stubbed
 
-- Neo Everyday PDF parsing
 - Cursor SDK AI insights (`AiInsightsProvider`, off by default)

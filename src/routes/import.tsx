@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "#/integrations/trpc/react";
 
@@ -8,10 +8,21 @@ export const Route = createFileRoute("/import")({
 	component: ImportPage,
 });
 
+function bytesToBase64(bytes: Uint8Array): string {
+	let binary = "";
+	const size = 0x8000;
+	for (let index = 0; index < bytes.length; index += size) {
+		binary += String.fromCharCode(...bytes.subarray(index, index + size));
+	}
+	return btoa(binary);
+}
+
 function ImportPage() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const [busy, setBusy] = useState(false);
+	const [dragOver, setDragOver] = useState(false);
+	const dragDepth = useRef(0);
 
 	const upload = useMutation({
 		...trpc.import.upload.mutationOptions(),
@@ -28,13 +39,27 @@ function ImportPage() {
 		},
 	});
 
-	async function onFiles(files: FileList | null) {
+	async function onFiles(files: FileList | File[] | null) {
 		if (!files?.length) return;
 		setBusy(true);
 		try {
 			for (const file of Array.from(files)) {
-				const text = await file.text();
-				await upload.mutateAsync({ filename: file.name, text });
+				const isPdf =
+					file.type === "application/pdf" ||
+					file.name.toLowerCase().endsWith(".pdf");
+				if (isPdf) {
+					const bytes = new Uint8Array(await file.arrayBuffer());
+					await upload.mutateAsync({
+						filename: file.name,
+						text: "",
+						bytesBase64: bytesToBase64(bytes),
+					});
+				} else {
+					await upload.mutateAsync({
+						filename: file.name,
+						text: await file.text(),
+					});
+				}
 			}
 		} finally {
 			setBusy(false);
@@ -50,21 +75,45 @@ function ImportPage() {
 				</p>
 			</header>
 
-			<label className="mb-dropzone">
+			<label
+				className={dragOver ? "mb-dropzone mb-dropzone-active" : "mb-dropzone"}
+				onDragEnter={(event) => {
+					event.preventDefault();
+					dragDepth.current += 1;
+					setDragOver(true);
+				}}
+				onDragOver={(event) => event.preventDefault()}
+				onDragLeave={() => {
+					dragDepth.current -= 1;
+					if (dragDepth.current <= 0) {
+						dragDepth.current = 0;
+						setDragOver(false);
+					}
+				}}
+				onDrop={(event) => {
+					event.preventDefault();
+					dragDepth.current = 0;
+					setDragOver(false);
+					void onFiles(event.dataTransfer.files);
+				}}
+			>
 				<input
 					type="file"
 					accept=".csv,text/csv,application/pdf"
 					multiple
 					className="sr-only"
 					disabled={busy}
-					onChange={(event) => onFiles(event.target.files)}
+					onChange={(event) => {
+						void onFiles(event.target.files);
+						event.target.value = "";
+					}}
 				/>
 				<span className="mb-dropzone-title">
-					{busy ? "Importing…" : "Choose CSV or PDF files"}
+					{busy ? "Importing…" : "Drop a statement here"}
 				</span>
 				<span className="mb-dropzone-copy">
-					Neo credit, Scotiabank chequing, and Scotiabank credit CSV files. Neo
-					Everyday PDF is recognized but not read yet.
+					Or click to choose. CSV from Neo credit, Scotiabank chequing, and
+					Scotiabank credit. PDF from Neo Everyday.
 				</span>
 			</label>
 		</section>

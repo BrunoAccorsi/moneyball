@@ -16,9 +16,10 @@ import {
 export async function importStatement(input: {
 	filename: string;
 	text: string;
+	bytes?: Uint8Array;
 	accountId?: number;
 }) {
-	const { strategy, transactions: parsed } = importWithAutoDetect(input);
+	const { strategy, transactions: parsed } = await importWithAutoDetect(input);
 	const { unique, duplicateCount: batchDupes } =
 		dedupeParsedTransactions(parsed);
 
