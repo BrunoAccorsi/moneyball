@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+pdf-service
+tests
+coverage
+*.md
+.env
+.env.*
+fixtures

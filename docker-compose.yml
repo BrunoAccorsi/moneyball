@@ -1,0 +1,64 @@
+# Local: docker compose up --build
+# Dokploy / Traefik: set APP_DOMAIN and TRAEFIK_ENABLE=true. See README.
+# No hostname is hardcoded; APP_DOMAIN defaults to moneyball.localhost only so
+# the label stays valid when Traefik is not in front of this stack.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moneyball}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moneyball}
+      POSTGRES_DB: ${POSTGRES_DB:-moneyball}
+    volumes:
+      - moneyball-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  pdf:
+    build: ./pdf-service
+    environment:
+      PYTHONUNBUFFERED: "1"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      pdf:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-moneyball}:${POSTGRES_PASSWORD:-moneyball}@db:5432/${POSTGRES_DB:-moneyball}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-change-me}
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:-}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-to-a-long-random-string}
+      PDF_SERVICE_URL: http://pdf:8000
+      CATEGORIZATION_LLM_API_KEY: ${CATEGORIZATION_LLM_API_KEY:-}
+      CATEGORIZATION_LLM_BASE_URL: ${CATEGORIZATION_LLM_BASE_URL:-}
+      CATEGORIZATION_LLM_MODEL: ${CATEGORIZATION_LLM_MODEL:-}
+    labels:
+      - traefik.enable=${TRAEFIK_ENABLE:-false}
+      - traefik.http.routers.moneyball.rule=Host(`${APP_DOMAIN:-moneyball.localhost}`)
+      - traefik.http.routers.moneyball.entrypoints=${TRAEFIK_ENTRYPOINTS:-websecure}
+      - traefik.http.routers.moneyball.tls=true
+      - traefik.http.routers.moneyball.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.services.moneyball.loadbalancer.server.port=3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+
+volumes:
+  moneyball-db:
