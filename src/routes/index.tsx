@@ -1,33 +1,50 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
+import { formatMonthName } from "#/domain/display";
 import { useTRPC } from "#/integrations/trpc/react";
 import { currentMonth, formatCents } from "#/lib/format";
 
 export const Route = createFileRoute("/")({
+	loader: async ({ context }) => {
+		const month = currentMonth();
+		await Promise.all([
+			context.queryClient.prefetchQuery(
+				context.trpc.transactions.summary.queryOptions(),
+			),
+			context.queryClient.prefetchQuery(
+				context.trpc.insights.overview.queryOptions({ month }),
+			),
+		]);
+	},
 	component: OverviewPage,
 });
 
 function OverviewPage() {
 	const trpc = useTRPC();
+	const month = currentMonth();
 	const summary = useQuery(trpc.transactions.summary.queryOptions());
-	const insights = useQuery(
-		trpc.insights.overview.queryOptions({ month: currentMonth() }),
-	);
+	const insights = useQuery(trpc.insights.overview.queryOptions({ month }));
+
+	const summaryValue = summary.isError
+		? "Unavailable"
+		: summary.data
+			? String(summary.data.count)
+			: "…";
+	const spendingValue = summary.isError
+		? "Unavailable"
+		: summary.data
+			? formatCents(summary.data.spendingCents)
+			: "…";
+	const netValue = insights.isError
+		? "Unavailable"
+		: insights.data
+			? formatCents(insights.data.netCashFlowCents)
+			: "…";
 
 	return (
 		<section className="mb-page">
 			<div className="mb-hero">
-				<img
-					src="/brand/logo.svg"
-					alt="Moneyball"
-					className="mb-hero-logo dark:hidden"
-				/>
-				<img
-					src="/brand/logo-dark.svg"
-					alt="Moneyball"
-					className="mb-hero-logo hidden dark:block"
-				/>
 				<p className="mb-eyebrow">Personal budget</p>
 				<h1 className="mb-title">Keep score of your money</h1>
 				<p className="mb-lede">
@@ -47,21 +64,15 @@ function OverviewPage() {
 			<div className="mb-stat-row">
 				<div className="mb-stat">
 					<p className="mb-stat-label">Tracked transactions</p>
-					<p className="mb-stat-value">{summary.data?.count ?? "—"}</p>
+					<p className="mb-stat-value">{summaryValue}</p>
 				</div>
 				<div className="mb-stat">
 					<p className="mb-stat-label">Spending in view</p>
-					<p className="mb-stat-value">
-						{summary.data ? formatCents(summary.data.spendingCents) : "—"}
-					</p>
+					<p className="mb-stat-value">{spendingValue}</p>
 				</div>
 				<div className="mb-stat">
-					<p className="mb-stat-label">
-						{insights.data?.month ?? currentMonth()} net
-					</p>
-					<p className="mb-stat-value">
-						{insights.data ? formatCents(insights.data.netCashFlowCents) : "—"}
-					</p>
+					<p className="mb-stat-label">{formatMonthName(month)} net</p>
+					<p className="mb-stat-value">{netValue}</p>
 				</div>
 			</div>
 		</section>

@@ -18,6 +18,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "#/components/ui/table";
+import { displayMerchant } from "#/domain/display";
 import { formatCents } from "#/lib/format";
 import {
 	filterTransactions,
@@ -36,7 +37,7 @@ const columns = [
 		cell: (info) => (
 			<div>
 				<div className="font-medium text-[var(--mb-ink)]">
-					{info.getValue()}
+					{displayMerchant(info.getValue())}
 				</div>
 				<div className="text-xs text-[var(--mb-muted)]">
 					{info.row.original.description}
@@ -58,7 +59,7 @@ const columns = [
 			const value = info.getValue();
 			return (
 				<span
-					className={`mb-amount ${value < 0 ? "text-[var(--mb-out)]" : "text-[var(--mb-in)]"}`}
+					className={`mb-amount font-semibold ${value < 0 ? "text-[var(--mb-out)]" : "text-[var(--mb-in)]"}`}
 				>
 					{formatCents(value)}
 				</span>

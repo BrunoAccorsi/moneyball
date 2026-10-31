@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "#/components/ui/button";
 import { useTRPC } from "#/integrations/trpc/react";
 
 export const Route = createFileRoute("/import")({
@@ -90,12 +89,6 @@ function ImportPage() {
 						</li>
 					))}
 				</ul>
-			</div>
-
-			<div className="mt-4">
-				<Button variant="outline" disabled>
-					PDF extractor coming soon
-				</Button>
 			</div>
 		</section>
 	);

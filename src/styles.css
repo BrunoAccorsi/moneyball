@@ -64,7 +64,10 @@ body {
 	min-height: 100vh;
 	color: var(--foreground);
 	background: var(--background);
-	font-family: var(--font-sans);
+	font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+	font-weight: 500;
+	font-size: 15px;
+	letter-spacing: -0.011em;
 	-webkit-font-smoothing: antialiased;
 }
 
@@ -115,20 +118,26 @@ body {
 .mb-brand {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.65rem;
 	text-decoration: none;
 	color: inherit;
+	min-height: 1.75rem;
 }
 
-.mb-brand-logo {
-	height: 1.65rem;
+.mb-wordmark,
+.mb-mark {
+	height: 1.7rem;
 	width: auto;
-	display: block;
 }
 
-.mb-brand-mark {
-	height: 1.65rem;
-	width: 1.65rem;
+.mb-mark {
+	height: 1.85rem;
+}
+
+html:not(.dark) .mb-for-dark {
+	display: none;
+}
+
+html.dark .mb-for-light {
 	display: none;
 }
 
@@ -172,14 +181,7 @@ body {
 }
 
 .mb-hero {
-	padding: 1.5rem 0 2rem;
-}
-
-.mb-hero-logo {
-	height: 2.4rem;
-	width: auto;
-	margin-bottom: 1.1rem;
-	display: block;
+	padding: 0.5rem 0 1.5rem;
 }
 
 .mb-eyebrow {
@@ -193,11 +195,11 @@ body {
 
 .mb-title {
 	margin: 0;
-	font-family: var(--font-sans);
-	font-size: clamp(2.2rem, 4.5vw, 3.1rem);
+	font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+	font-size: clamp(2.1rem, 4vw, 2.8rem);
 	font-weight: 700;
-	line-height: 1.08;
-	letter-spacing: -0.03em;
+	line-height: 1.05;
+	letter-spacing: -0.04em;
 }
 
 .mb-lede {
@@ -328,22 +330,87 @@ body {
 	}
 }
 
+.mb-tooltip {
+	background: var(--popover);
+	color: var(--popover-foreground);
+	border: 1px solid var(--border);
+	border-radius: 0.7rem;
+	padding: 0.55rem 0.75rem;
+	font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+	font-size: 0.82rem;
+	font-weight: 600;
+	box-shadow: 0 12px 30px color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+
+.mb-tooltip-label {
+	margin: 0 0 0.25rem;
+	color: var(--muted-foreground);
+	font-weight: 600;
+}
+
+.mb-tooltip-swatch {
+	display: inline-block;
+	width: 0.55rem;
+	height: 0.55rem;
+	margin-right: 0.4rem;
+	border-radius: 999px;
+}
+
+.mb-donut {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+
+.mb-legend {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	min-width: 11rem;
+	display: grid;
+	gap: 0.35rem;
+	font-size: 0.82rem;
+}
+
+.mb-legend li {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.mb-legend-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mb-legend-value {
+	color: var(--muted-foreground);
+	font-weight: 600;
+}
+
+@media (min-width: 901px) {
+	.mb-mark {
+		display: none;
+	}
+}
+
 @media (max-width: 900px) {
 	.mb-chart-grid,
-	.mb-filter-grid {
+	.mb-filter-grid,
+	.mb-donut {
 		grid-template-columns: 1fr;
+		display: grid;
+	}
+
+	.mb-wordmark {
+		display: none;
 	}
 
 	.mb-topbar-inner {
 		flex-direction: column;
 		align-items: flex-start;
-	}
-
-	.mb-brand-logo {
-		display: none;
-	}
-
-	.mb-brand-mark {
-		display: block;
 	}
 }

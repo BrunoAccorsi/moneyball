@@ -21,22 +21,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 						<img
 							src="/brand/logo.svg"
 							alt="Moneyball"
-							className="mb-brand-logo dark:hidden"
+							className="mb-wordmark mb-for-light"
 						/>
 						<img
 							src="/brand/logo-dark.svg"
-							alt="Moneyball"
-							className="mb-brand-logo hidden dark:block"
+							alt=""
+							className="mb-wordmark mb-for-dark"
 						/>
 						<img
 							src="/brand/mark.svg"
 							alt=""
-							className="mb-brand-mark dark:hidden"
+							className="mb-mark mb-for-light"
 						/>
 						<img
 							src="/brand/mark-dark.svg"
 							alt=""
-							className="mb-brand-mark hidden dark:block"
+							className="mb-mark mb-for-dark"
 						/>
 					</Link>
 					<nav className="mb-nav" aria-label="Primary">
