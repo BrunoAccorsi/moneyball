@@ -19,7 +19,8 @@ export async function importStatement(input: {
 	bytes?: Uint8Array;
 	accountId?: number;
 }) {
-	const { strategy, transactions: parsed } = await importWithAutoDetect(input);
+	const detected = await importWithAutoDetect(input);
+	const { strategy, transactions: parsed } = detected;
 	const { unique, duplicateCount: batchDupes } =
 		dedupeParsedTransactions(parsed);
 
@@ -28,7 +29,7 @@ export async function importStatement(input: {
 		const existing = await db
 			.select()
 			.from(accounts)
-			.where(eq(accounts.name, strategy.accountHint.name))
+			.where(eq(accounts.name, detected.accountName))
 			.limit(1);
 
 		if (existing[0]) {
@@ -37,9 +38,9 @@ export async function importStatement(input: {
 			const [created] = await db
 				.insert(accounts)
 				.values({
-					name: strategy.accountHint.name,
+					name: detected.accountName,
 					institution: strategy.accountHint.institution,
-					kind: strategy.accountHint.kind,
+					kind: detected.accountKind,
 				})
 				.returning();
 			accountId = created.id;

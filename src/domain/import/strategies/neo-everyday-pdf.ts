@@ -1,10 +1,12 @@
-import { extractTextItems } from "unpdf";
+import { extractText } from "unpdf";
 import { dollarsToCents, normalizeWhitespace } from "../../money";
 import { buildFingerprint } from "../fingerprint";
-import type { ImportInput, ImportStrategy, ParsedTransaction } from "../types";
-
-type TextItem = { str: string; x: number; y: number };
-type PlacedCell = { text: string; x: number };
+import type {
+	ImportInput,
+	ImportParseResult,
+	ImportStrategy,
+	ParsedTransaction,
+} from "../types";
 
 const MONTHS: Record<string, number> = {
 	jan: 1,
@@ -21,195 +23,99 @@ const MONTHS: Record<string, number> = {
 	dec: 12,
 };
 
-function parseDate(value: string): string | null {
-	const trimmed = value.trim();
-	const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
-	if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+const ROW =
+	/^([A-Za-z]{3,9})\s+(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{1,2})\s+(.+)$/;
+const AMOUNT = /-?\d{1,3}(?:,\d{3})*\.\d{2}/g;
 
-	const monthFirst = /^([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/.exec(trimmed);
-	if (monthFirst) {
-		const month = MONTHS[monthFirst[1]?.slice(0, 3).toLowerCase() ?? ""];
-		if (!month) return null;
-		return `${monthFirst[3]}-${String(month).padStart(2, "0")}-${String(monthFirst[2]).padStart(2, "0")}`;
-	}
-
-	const dayFirst = /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/.exec(trimmed);
-	if (dayFirst) {
-		const month = MONTHS[dayFirst[2]?.slice(0, 3).toLowerCase() ?? ""];
-		if (!month) return null;
-		return `${dayFirst[3]}-${String(month).padStart(2, "0")}-${String(dayFirst[1]).padStart(2, "0")}`;
-	}
-
-	return null;
+function monthNumber(name: string): number | null {
+	return MONTHS[name.slice(0, 3).toLowerCase()] ?? null;
 }
 
-function parseMoney(value: string): number | null {
-	const trimmed = value.trim();
-	if (!trimmed || trimmed === "-" || trimmed === "—") return null;
-	const negative =
-		/^\(.*\)$/.test(trimmed) ||
-		trimmed.startsWith("-") ||
-		trimmed.endsWith("-");
-	const numeric = trimmed.replace(/[$,()\s]/g, "").replace(/-$/, "");
-	if (!numeric) return null;
-	const amount = Number(numeric);
-	if (!Number.isFinite(amount)) return null;
-	const cents = dollarsToCents(amount);
-	return negative ? -Math.abs(cents) : Math.abs(cents);
+function isoDate(monthName: string, day: string, year: number): string | null {
+	const month = monthNumber(monthName);
+	if (!month) return null;
+	return `${year}-${String(month).padStart(2, "0")}-${day.padStart(2, "0")}`;
 }
 
-type ColumnRole =
-	| "date"
-	| "description"
-	| "out"
-	| "in"
-	| "amount"
-	| "balance"
-	| "ignore";
-
-function columnRole(header: string): ColumnRole {
-	const value = header.toLowerCase();
-	if (value.includes("balance")) return "balance";
-	if (value.includes("date")) return "date";
-	if (
-		value.includes("money out") ||
-		value.includes("withdrawal") ||
-		value.includes("debit")
-	) {
-		return "out";
-	}
-	if (
-		value.includes("money in") ||
-		value.includes("deposit") ||
-		value.includes("credit")
-	) {
-		return "in";
-	}
-	if (value.includes("amount")) return "amount";
-	if (
-		value.includes("description") ||
-		value.includes("merchant") ||
-		value.includes("details")
-	) {
-		return "description";
-	}
-	return "ignore";
-}
-
-function isHeader(cells: string[]): boolean {
-	const joined = cells.join(" ").toLowerCase();
-	return (
-		joined.includes("date") &&
-		(joined.includes("description") ||
-			joined.includes("merchant") ||
-			joined.includes("money out") ||
-			joined.includes("money in"))
-	);
-}
-
-function groupLines(items: TextItem[]): PlacedCell[][] {
-	const sorted = items
-		.filter((item) => item.str.trim())
-		.sort((a, b) => b.y - a.y || a.x - b.x);
-	const lines: { y: number; cells: PlacedCell[] }[] = [];
-
-	for (const item of sorted) {
-		const line = lines.find((candidate) => Math.abs(candidate.y - item.y) < 3);
-		const cell = { text: item.str.trim(), x: item.x };
-		if (line) line.cells.push(cell);
-		else lines.push({ y: item.y, cells: [cell] });
-	}
-
-	return lines.map((line) => line.cells.sort((a, b) => a.x - b.x));
-}
-
-function assignColumns(cells: PlacedCell[], headers: PlacedCell[]): string[] {
-	const values = headers.map(() => "");
-	for (const cell of cells) {
-		let index = 0;
-		let distance = Number.POSITIVE_INFINITY;
-		headers.forEach((header, headerIndex) => {
-			const next = Math.abs(cell.x - header.x);
-			if (next < distance) {
-				distance = next;
-				index = headerIndex;
-			}
-		});
-		values[index] = values[index] ? `${values[index]} ${cell.text}` : cell.text;
-	}
-	return values;
-}
-
-export function transactionsFromLines(
-	lines: PlacedCell[][],
-): ParsedTransaction[] {
-	const headerIndex = lines.findIndex((line) =>
-		isHeader(line.map((cell) => cell.text)),
-	);
-	if (headerIndex < 0) return [];
-
-	const headers = lines[headerIndex] ?? [];
-	const roles = headers.map((cell) => columnRole(cell.text));
-	const parsed: ParsedTransaction[] = [];
-	let current: ParsedTransaction | null = null;
-
-	for (const line of lines.slice(headerIndex + 1)) {
-		const values = assignColumns(line, headers);
-		const date = values.find((_, index) => roles[index] === "date") ?? "";
-		const description = normalizeWhitespace(
-			values.filter((_, index) => roles[index] === "description").join(" "),
+function statementYears(text: string): {
+	startYear: number;
+	endYear: number;
+	startMonth: number;
+} {
+	const match =
+		/([A-Za-z]{3,9})\s+\d{1,2},\s+(\d{4})\s*[-–]\s*([A-Za-z]{3,9})\s+\d{1,2},\s+(\d{4})/.exec(
+			text,
 		);
-		const transactionDate = parseDate(date);
+	if (!match) {
+		const lone = /\b(20\d{2})\b/.exec(text);
+		const year = lone ? Number(lone[1]) : new Date().getUTCFullYear();
+		return { startYear: year, endYear: year, startMonth: 1 };
+	}
+	return {
+		startYear: Number(match[2]),
+		endYear: Number(match[4]),
+		startMonth: monthNumber(match[1] ?? "") ?? 1,
+	};
+}
 
-		if (!transactionDate) {
-			const previous = current;
-			if (previous && description && !isHeader(values)) {
-				const nextDescription = normalizeWhitespace(
-					`${previous.description} ${description}`,
-				);
-				const updated: ParsedTransaction = {
-					transactionDate: previous.transactionDate,
-					postedDate: previous.postedDate,
-					status: previous.status,
-					description: nextDescription,
-					merchant: nextDescription,
-					amountCents: previous.amountCents,
-					sourceId: previous.sourceId,
-					fingerprint: buildFingerprint({
-						sourceId: "neo-everyday-pdf",
-						transactionDate: previous.transactionDate,
-						postedDate: previous.postedDate,
-						description: nextDescription,
-						amountCents: previous.amountCents,
-						status: previous.status,
-					}),
-				};
-				current = updated;
-				parsed[parsed.length - 1] = updated;
-			}
-			continue;
-		}
+function yearForMonth(
+	month: number,
+	period: { startYear: number; endYear: number; startMonth: number },
+): number {
+	if (period.startYear === period.endYear) return period.startYear;
+	return month >= period.startMonth ? period.startYear : period.endYear;
+}
 
-		if (/opening balance|closing balance/i.test(description)) continue;
+function accountFromText(text: string): {
+	accountName: string;
+	accountKind: "chequing" | "everyday";
+} {
+	if (/neo chequing/i.test(text)) {
+		return { accountName: "Neo Chequing", accountKind: "chequing" };
+	}
+	return { accountName: "Neo Everyday", accountKind: "everyday" };
+}
 
-		const outValue = values.find((_, index) => roles[index] === "out");
-		const inValue = values.find((_, index) => roles[index] === "in");
-		const amountValue = values.find((_, index) => roles[index] === "amount");
-		const moneyOut = outValue ? parseMoney(outValue) : null;
-		const moneyIn = inValue ? parseMoney(inValue) : null;
-		const signed = amountValue ? parseMoney(amountValue) : null;
-		const amountCents =
-			moneyOut != null
-				? -Math.abs(moneyOut)
-				: moneyIn != null
-					? Math.abs(moneyIn)
-					: signed;
+export function parseNeoStatementText(text: string): ImportParseResult {
+	const period = statementYears(text);
+	const account = accountFromText(text);
+	const transactions: ParsedTransaction[] = [];
 
-		if (amountCents == null || !description) continue;
+	for (const rawLine of text.split(/\r?\n/)) {
+		const line = rawLine.trim();
+		const match = ROW.exec(line);
+		if (!match) continue;
 
-		current = {
+		const rest = match[5] ?? "";
+		const amounts = [...rest.matchAll(AMOUNT)].map((found) => found[0]);
+		if (amounts.length < 2) continue;
+
+		const amountToken = amounts[amounts.length - 2] ?? "";
+		const amountCents = dollarsToCents(amountToken);
+		const description = normalizeWhitespace(
+			rest.slice(0, rest.lastIndexOf(amountToken)).replace(AMOUNT, " "),
+		);
+		if (!description) continue;
+
+		const txnMonth = monthNumber(match[1] ?? "");
+		const postedMonth = monthNumber(match[3] ?? "");
+		if (!txnMonth || !postedMonth) continue;
+
+		const transactionDate = isoDate(
+			match[1] ?? "",
+			match[2] ?? "",
+			yearForMonth(txnMonth, period),
+		);
+		const postedDate = isoDate(
+			match[3] ?? "",
+			match[4] ?? "",
+			yearForMonth(postedMonth, period),
+		);
+		if (!transactionDate || !postedDate) continue;
+
+		transactions.push({
 			transactionDate,
-			postedDate: transactionDate,
+			postedDate,
 			status: "Posted",
 			description,
 			merchant: description,
@@ -218,29 +124,15 @@ export function transactionsFromLines(
 			fingerprint: buildFingerprint({
 				sourceId: "neo-everyday-pdf",
 				transactionDate,
-				postedDate: transactionDate,
+				postedDate,
 				description,
 				amountCents,
 				status: "Posted",
 			}),
-		};
-		parsed.push(current);
+		});
 	}
 
-	return parsed;
-}
-
-async function linesFromPdf(bytes: Uint8Array): Promise<PlacedCell[][]> {
-	const extracted = await extractTextItems(bytes);
-	const lines: PlacedCell[][] = [];
-	for (const page of extracted.items) {
-		lines.push(
-			...groupLines(
-				page.map((item) => ({ str: item.str, x: item.x, y: item.y })),
-			),
-		);
-	}
-	return lines;
+	return { transactions, ...account };
 }
 
 function isPdf(input: ImportInput): boolean {
@@ -249,9 +141,17 @@ function isPdf(input: ImportInput): boolean {
 	return Boolean(input.bytes && input.bytes[0] === 0x25);
 }
 
+async function statementText(input: ImportInput): Promise<string> {
+	if (input.bytes?.length) {
+		const extracted = await extractText(input.bytes, { mergePages: true });
+		return extracted.text;
+	}
+	return input.text;
+}
+
 export const neoEverydayPdfStrategy: ImportStrategy = {
 	id: "neo-everyday-pdf",
-	label: "Neo Everyday PDF",
+	label: "Neo statement PDF",
 	accountHint: {
 		name: "Neo Everyday",
 		institution: "Neo Financial",
@@ -259,13 +159,13 @@ export const neoEverydayPdfStrategy: ImportStrategy = {
 	},
 	canParse: (input) => isPdf(input),
 	parse: async (input) => {
-		const lines = input.bytes?.length ? await linesFromPdf(input.bytes) : [];
-		const transactions = transactionsFromLines(lines);
-		if (transactions.length === 0) {
+		const text = await statementText(input);
+		const result = parseNeoStatementText(text);
+		if (result.transactions.length === 0) {
 			throw new Error(
-				"No transactions found in this PDF. Use a Neo Everyday statement with a date, description, and money in or money out.",
+				"No transactions found in this PDF. It needs Neo statement rows with a transaction date, posted date, description, and amount.",
 			);
 		}
-		return transactions;
+		return result;
 	},
 };

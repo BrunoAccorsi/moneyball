@@ -113,7 +113,7 @@ function ImportPage() {
 				</span>
 				<span className="mb-dropzone-copy">
 					Or click to choose. CSV from Neo credit, Scotiabank chequing, and
-					Scotiabank credit. PDF from Neo Everyday.
+					Scotiabank credit. PDF statements from Neo Chequing or Everyday.
 				</span>
 			</label>
 		</section>

@@ -3,7 +3,12 @@ import { neoCreditCsvStrategy } from "./strategies/neo-credit-csv";
 import { neoEverydayPdfStrategy } from "./strategies/neo-everyday-pdf";
 import { scotiaChequingCsvStrategy } from "./strategies/scotia-chequing-csv";
 import { scotiaCreditCsvStrategy } from "./strategies/scotia-credit-csv";
-import type { ImportInput, ImportStrategy, ParsedTransaction } from "./types";
+import type {
+	ImportInput,
+	ImportParseResult,
+	ImportStrategy,
+	ParsedTransaction,
+} from "./types";
 
 export const importStrategies: ImportStrategy[] = [
 	scotiaCreditCsvStrategy,
@@ -32,9 +37,33 @@ export function detectImportStrategy(
 	return null;
 }
 
+function normalizeParse(
+	strategy: ImportStrategy,
+	raw: ParsedTransaction[] | ImportParseResult,
+): {
+	transactions: ParsedTransaction[];
+	accountName: string;
+	accountKind: "credit" | "chequing" | "everyday";
+} {
+	if (Array.isArray(raw)) {
+		return {
+			transactions: raw,
+			accountName: strategy.accountHint.name,
+			accountKind: strategy.accountHint.kind,
+		};
+	}
+	return {
+		transactions: raw.transactions,
+		accountName: raw.accountName ?? strategy.accountHint.name,
+		accountKind: raw.accountKind ?? strategy.accountHint.kind,
+	};
+}
+
 export async function importWithAutoDetect(input: ImportInput): Promise<{
 	strategy: ImportStrategy;
 	transactions: ParsedTransaction[];
+	accountName: string;
+	accountKind: "credit" | "chequing" | "everyday";
 }> {
 	const strategy = detectImportStrategy(input);
 	if (!strategy) {
@@ -43,10 +72,8 @@ export async function importWithAutoDetect(input: ImportInput): Promise<{
 		);
 	}
 
-	return {
-		strategy,
-		transactions: await strategy.parse(input),
-	};
+	const parsed = normalizeParse(strategy, await strategy.parse(input));
+	return { strategy, ...parsed };
 }
 
 export function dedupeParsedTransactions(transactions: ParsedTransaction[]): {

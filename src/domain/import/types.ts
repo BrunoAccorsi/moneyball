@@ -24,6 +24,12 @@ export type ImportInput = {
 	bytes?: Uint8Array;
 };
 
+export type ImportParseResult = {
+	transactions: ParsedTransaction[];
+	accountName?: string;
+	accountKind?: "credit" | "chequing" | "everyday";
+};
+
 export type ImportStrategy = {
 	readonly id: ImportSourceId;
 	readonly label: string;
@@ -35,5 +41,8 @@ export type ImportStrategy = {
 	canParse: (input: ImportInput & { headers: string[] }) => boolean;
 	parse: (
 		input: ImportInput,
-	) => ParsedTransaction[] | Promise<ParsedTransaction[]>;
+	) =>
+		| ParsedTransaction[]
+		| ImportParseResult
+		| Promise<ParsedTransaction[] | ImportParseResult>;
 };

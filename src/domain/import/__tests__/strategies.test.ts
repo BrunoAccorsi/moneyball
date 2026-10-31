@@ -7,7 +7,10 @@ import {
 	detectImportStrategy,
 	importWithAutoDetect,
 } from "../registry";
-import { neoEverydayPdfStrategy } from "../strategies/neo-everyday-pdf";
+import {
+	neoEverydayPdfStrategy,
+	parseNeoStatementText,
+} from "../strategies/neo-everyday-pdf";
 
 const root = join(
 	dirname(fileURLToPath(import.meta.url)),
@@ -83,55 +86,49 @@ describe("import strategies", () => {
 		expect(duplicateCount).toBe(transactions.length);
 	});
 
-	it("reads a Neo Everyday PDF statement", async () => {
+	it("parses a Neo Chequing statement, including signed debits", () => {
+		const text = [
+			"Neo Chequing",
+			"Sep 23, 2026 - Sep 30, 2026",
+			"Date Description Credits Debits Balance",
+			"Sep 23 Sep 23 Transfer from Everyday Spending 10,012.35 10,012.35",
+			"Sep 25 Sep 25 Transfer to Savings -10,012.35 0.00",
+			"Sep 28 Sep 28 Transfer from NEO FINANCIAL T 2,420.23 12,428.08",
+		].join("\n");
+
+		const result = parseNeoStatementText(text);
+		expect(result.accountName).toBe("Neo Chequing");
+		expect(result.transactions).toHaveLength(3);
+		expect(result.transactions[0]?.amountCents).toBe(1_001_235);
+		expect(result.transactions[1]?.amountCents).toBe(-1_001_235);
+		expect(result.transactions[1]?.transactionDate).toBe("2026-09-25");
+		expect(result.transactions[2]?.description).toContain("NEO FINANCIAL");
+	});
+
+	it("reads that statement layout back out of a PDF", async () => {
 		const { PDFDocument, StandardFonts } = await import("pdf-lib");
 		const doc = await PDFDocument.create();
 		const page = doc.addPage([700, 800]);
 		const font = await doc.embedFont(StandardFonts.Helvetica);
-		const rows = [
-			["Date", "Description", "Money out", "Money in", "Balance"],
-			["Oct 5, 2026", "Wise Canada", "$300.00", "", "$900.00"],
-			[
-				"Oct 13, 2026",
-				"Transfer from NEO FINANCIAL T",
-				"",
-				"$2,420.23",
-				"$3,320.23",
-			],
-			["Oct 31, 2026", "Tim Hortons", "$14.35", "", "$3,305.88"],
+		const lines = [
+			"Neo Chequing",
+			"Sep 23, 2026 - Sep 30, 2026",
+			"Date Description Credits Debits Balance",
+			"Sep 25 Sep 25 Transfer to Telus Mobility -54.50 -54.50",
+			"Sep 30 Sep 30 Interac e-transfer sent from Paula 102.50 12,130.58",
 		];
-		const xs = [48, 160, 380, 470, 560];
-		let y = 700;
-		page.drawText("Neo Everyday", { x: 48, y: 750, size: 16, font });
-		for (const row of rows) {
-			row.forEach((cell, index) => {
-				if (!cell) return;
-				page.drawText(cell, { x: xs[index] ?? 48, y, size: 11, font });
-			});
-			y -= 24;
+		let y = 740;
+		for (const line of lines) {
+			page.drawText(line, { x: 40, y, size: 11, font });
+			y -= 22;
 		}
-
 		const bytes = await doc.save();
-		expect(
-			neoEverydayPdfStrategy.canParse({
-				filename: "statement.pdf",
-				text: "",
-				bytes,
-				headers: [],
-			}),
-		).toBe(true);
-
-		const transactions = await neoEverydayPdfStrategy.parse({
+		const parsed = await neoEverydayPdfStrategy.parse({
 			filename: "statement.pdf",
 			text: "",
 			bytes,
 		});
-		const wise = transactions.find((tx) => tx.description.includes("Wise"));
-		const pay = transactions.find((tx) =>
-			tx.description.includes("NEO FINANCIAL"),
-		);
-		expect(wise?.amountCents).toBe(-30000);
-		expect(pay?.amountCents).toBe(242023);
-		expect(transactions).toHaveLength(3);
+		const transactions = Array.isArray(parsed) ? parsed : parsed.transactions;
+		expect(transactions.map((tx) => tx.amountCents)).toEqual([-5450, 10250]);
 	});
 });
