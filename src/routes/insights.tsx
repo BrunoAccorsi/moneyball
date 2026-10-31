@@ -334,33 +334,6 @@ function InsightsPage() {
 							</div>
 						</div>
 					</div>
-
-					<div className="mb-panel mt-6">
-						<h2 className="mb-panel-title">AI insights</h2>
-						{data.aiProvider.enabled ? (
-							data.aiInsights.length === 0 ? (
-								<p className="mt-2 text-sm text-[var(--mb-muted)]">
-									Nothing to add for this month.
-								</p>
-							) : (
-								<ul className="mt-3 space-y-2">
-									{data.aiInsights.map((insight) => (
-										<li key={insight.id}>
-											<p className="font-medium">{insight.title}</p>
-											<p className="text-sm text-[var(--mb-muted)]">
-												{insight.body}
-											</p>
-										</li>
-									))}
-								</ul>
-							)
-						) : (
-							<p className="mt-2 text-sm text-[var(--mb-muted)]">
-								Turned off. A later provider can write these without changing
-								the charts.
-							</p>
-						)}
-					</div>
 				</>
 			)}
 		</section>

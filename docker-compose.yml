@@ -27,7 +27,8 @@ services:
       NODE_ENV: production
       PORT: "3000"
       HOST: "0.0.0.0"
-      AI_INSIGHTS_PROVIDER: "null"
+      CURSOR_API_KEY: ${CURSOR_API_KEY:-}
+      CURSOR_MODEL: ${CURSOR_MODEL:-composer-2.5}
     labels:
       - traefik.enable=true
       - traefik.http.routers.moneyball.rule=Host(`moneyball.localhost`)

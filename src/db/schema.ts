@@ -1,6 +1,7 @@
 import {
 	boolean,
 	integer,
+	jsonb,
 	pgTable,
 	serial,
 	text,
@@ -68,6 +69,21 @@ export const transactions = pgTable(
 	],
 );
 
+export const budgetSettings = pgTable("budget_settings", {
+	id: integer().primaryKey(),
+	monthlySavingsTargetCents: integer("monthly_savings_target_cents")
+		.notNull()
+		.default(0),
+	updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const aiReviews = pgTable("ai_reviews", {
+	month: text().primaryKey(),
+	payload: jsonb().notNull(),
+	model: text().notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const importBatches = pgTable("import_batches", {
 	id: serial().primaryKey(),
 	sourceId: text("source_id").notNull(),
@@ -84,3 +100,5 @@ export type Category = typeof categories.$inferSelect;
 export type CategoryRule = typeof categoryRules.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type ImportBatch = typeof importBatches.$inferSelect;
+export type BudgetSettings = typeof budgetSettings.$inferSelect;
+export type AiReviewRow = typeof aiReviews.$inferSelect;

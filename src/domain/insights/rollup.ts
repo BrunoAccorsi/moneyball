@@ -6,6 +6,7 @@ export type InsightSourceRow = {
 	transactionDate: string;
 	excludedFromBudget: boolean;
 	categoryName: string | null;
+	categorySlug?: string | null;
 	isTransfer: boolean | null;
 };
 

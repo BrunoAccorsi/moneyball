@@ -393,6 +393,114 @@ html.dark .mb-for-light {
 	font-weight: 600;
 }
 
+.mb-overview-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.mb-overview-grid + .mb-overview-grid {
+	margin-top: 1rem;
+}
+
+.mb-list {
+	list-style: none;
+	margin: 0.85rem 0 0;
+	padding: 0;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.mb-list-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 0.75rem;
+	align-items: baseline;
+}
+
+.mb-meta {
+	color: var(--muted-foreground);
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+.mb-kpi-delta {
+	margin: 0.35rem 0 0;
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+.mb-delta-good {
+	color: var(--primary);
+}
+
+.mb-delta-bad {
+	color: var(--destructive);
+}
+
+.mb-delta-flat {
+	color: var(--muted-foreground);
+}
+
+.mb-compare {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 0.9rem;
+	margin-top: 0.25rem;
+	color: var(--muted-foreground);
+	font-size: 0.78rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.mb-bar,
+.mb-progress {
+	height: 0.4rem;
+	border-radius: 999px;
+	background: var(--muted);
+	overflow: hidden;
+}
+
+.mb-bar {
+	margin-top: 0.35rem;
+}
+
+.mb-progress {
+	margin-top: 0.75rem;
+	height: 0.5rem;
+}
+
+.mb-bar > span,
+.mb-progress > span {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: var(--chart-1);
+}
+
+.mb-progress > span {
+	background: var(--primary);
+}
+
+.mb-inline-form {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 0.85rem;
+}
+
+.mb-pill {
+	display: inline-block;
+	margin-right: 0.4rem;
+	padding: 0.05rem 0.4rem;
+	border-radius: 999px;
+	background: var(--accent);
+	color: var(--accent-foreground);
+	font-size: 0.68rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	font-weight: 700;
+	vertical-align: 1px;
+}
+
 @media (min-width: 901px) {
 	.mb-mark {
 		display: none;
@@ -402,7 +510,8 @@ html.dark .mb-for-light {
 @media (max-width: 900px) {
 	.mb-chart-grid,
 	.mb-filter-grid,
-	.mb-donut {
+	.mb-donut,
+	.mb-overview-grid {
 		grid-template-columns: 1fr;
 		display: grid;
 	}

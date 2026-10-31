@@ -4,7 +4,8 @@ import { z } from "zod";
 export const env = createEnv({
 	server: {
 		DATABASE_URL: z.string().url().optional(),
-		AI_INSIGHTS_PROVIDER: z.enum(["null", "cursor-sdk"]).optional(),
+		CURSOR_API_KEY: z.string().min(1).optional(),
+		CURSOR_MODEL: z.string().min(1).optional(),
 		SERVER_URL: z.string().url().optional(),
 	},
 	clientPrefix: "VITE_",

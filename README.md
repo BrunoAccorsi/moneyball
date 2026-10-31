@@ -31,7 +31,7 @@ App: http://localhost:3000
 | `pnpm dev` | Dev server |
 | `pnpm typecheck` | TypeScript |
 | `pnpm check` | Biome |
-| `pnpm test` | Unit tests (import + categorization) |
+| `pnpm test` | Unit tests (import, categories, overview math) |
 | `pnpm db:push` | Push schema |
 | `pnpm db:seed` | Seed categories/rules/accounts |
 
@@ -52,12 +52,12 @@ Sample fixtures live in `fixtures/`. Categorization seeds come from `fixtures/ru
 
 `docker compose up --build` runs Postgres + the Nitro app. Traefik labels are on the `app` service; point a host at port 3000 or let Traefik route `moneyball.localhost`.
 
-Set `DATABASE_URL` and keep `AI_INSIGHTS_PROVIDER=null` unless you wire the Cursor SDK provider.
+Set `DATABASE_URL`. Monthly reviews run when `CURSOR_API_KEY` is set (optional `CURSOR_MODEL`, default `composer-2.5`). With no key, Overview shows how to add one.
 
 ## Brand
 
 Tokens live in `src/styles/theme.css` (synced from `public/brand/theme.css`). UI font is Manrope; amounts use tabular figures. Logos/icons under `public/brand/` are path-referenced and safe to replace in place.
 
-## Stubbed
+## AI reviews
 
-- Cursor SDK AI insights (`AiInsightsProvider`, off by default)
+Overview asks the Cursor SDK for a monthly review (summary, patterns, anomalies, saving ideas) from aggregated totals and merchant names. Reviews are cached per month. Set `CURSOR_API_KEY` on the server. `CURSOR_MODEL` is optional.
