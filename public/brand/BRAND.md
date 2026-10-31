@@ -1,6 +1,6 @@
 # Moneyball brand
 
-**Mark:** a deep money-green baseball that doubles as a coin: a faint coin rim, two classic curved seams with stitch ticks tilted -35°, and a vertical bar through the centre so the seams read as a subtle $. At favicon sizes (16/32px) the rim and ticks are dropped and the seams and bar are thicker.
+**Mark:** "coin split". A coin/ball cut into a deep-green half (#16774A) and a light-green half (#3FB074) by an S curve made of two matching circles, with a thin vertical gap through the centre as the bar of the $. All geometry is exact circles and arcs on a 64px grid. The favicon (16/32px) uses a wider gap. mark-dark.svg uses brighter greens (#1E8C58 / #5CC98C), and the app icons are a white/mint coin on a green tile.
 **Wordmark:** "money" in ink + "ball" in green, set in Manrope 700 and converted to outlines (no font dependency).
 
 ## Font
