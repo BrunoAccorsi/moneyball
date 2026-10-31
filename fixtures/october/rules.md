@@ -1,0 +1,21 @@
+# Bruno's categorization answers (Oct 2026)
+- Wise Canada transfers (e.g. $300 Oct 5, $230 Oct 16, from Scotia): payments for credit card and debt in Brazil. Category "Brazil debt payments", recurring, counts as spending.
+- Amazon Channels charges: two different streaming add-ons (Apple TV $12.59, Paramount+ $15.74). Recurring subscriptions, not duplicates.
+- Apple small charges ($5.24, $4.19, $4.19): AppleCare+ / iCloud. Recurring subscriptions.
+- Amazon Marketplace $231.57 (Oct 1): guitar, gift from Bruna; reimbursed by Bruna via part of her $500 e-transfer (Oct 7). Net to zero.
+- Amazon Marketplace $85.03 (Oct 1): gift for Bruna. One-time, category Gifts.
+- Bruna's $1,050 e-transfer (Oct 13): her share of WestJet flights; net against WestJet $2,136.24 (Oct 10).
+- Other Bruna transfers in/out: household transfers, not income.
+- WestJet flights for in-laws: one-time travel.
+- Amazon.ca stroller $401.61 (Oct 24): one-time, Baby and home.
+- The Brick 2 chairs $272.90 (Oct 20): one-time.
+- Olive Branch Psychology $220: one-time (cancelled).
+- Kal Tire $189 (Oct 25): one-time.
+- Ultima Dental $146.73: treated as one-time (not yet confirmed by Bruno).
+- Lyft Oct 3 to 6 ($85.05): one-time, airport return from Brazil trip. Rideshare in general is occasional/situational.
+- Dorval airport purchases (Archibald, Starbucks) Oct 1: one-time, Brazil trip.
+- Twins, Triplets and More $81 (Oct 17): recurring, normal spending.
+- F45 Training $170/month: being paused going forward.
+- Pay: "Transfer from NEO FINANCIAL T" $2,420.23 is salary (biweekly).
+- Own-account moves to exclude: Neo Everyday <-> Pai, auto refills, Payment to Credit, Scotia card payments, e-transfers to/from Bruno Accorsi Bergoli (self).
+- Rent: $1,950/month transfer to 700 Shawnee.

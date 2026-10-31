@@ -1,0 +1,10 @@
+﻿Filter,Date,Description,Sub-description,Status,Type of Transaction,Amount,Associated card number
+"Custom filters (select dates and amounts), From date=2026-10-01, To date=2026-10-30","2026-10-28","scotiabank transit 92619 ","Calgary Ab","posted","Credit","-184.34","************8024"
+"","2026-10-26","apple.com/bill           ","866-712-7753 On (Apple Pay)","posted","Debit","4.19","************8024"
+"","2026-10-22","apple.com/bill           ","866-712-7753 On (Apple Pay)","posted","Debit","4.19","************8024"
+"","2026-10-21","apple.com/bill           ","866-712-7753 On (Apple Pay)","posted","Debit","5.24","************8024"
+"","2026-10-19","sobeys  millrise #5064   ","Calgary Ab (Apple Pay)","posted","Debit","21.25","************8024"
+"","2026-10-15","netflix.com              ","844-5052993 Bc","posted","Debit","9.03","************8024"
+"","2026-10-06","lyft *temp auth hold     ","Vancouver Bc","posted","Debit","15.12","************8024"
+"","2026-10-05","lyft *temp auth hold     ","Vancouver Bc","posted","Debit","15.94","************8024"
+"","2026-10-03","lyft *temp auth hold     ","Vancouver Bc","posted","Debit","53.99","************8024"

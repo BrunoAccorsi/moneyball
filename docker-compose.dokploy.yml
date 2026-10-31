@@ -1,0 +1,16 @@
+# Optional override when this stack must join Dokploy's Traefik network itself:
+#   docker compose -f docker-compose.yml -f docker-compose.dokploy.yml up -d
+# Dokploy usually attaches the network for you once a domain is set in the UI.
+# In that case you do not need this file. Set TRAEFIK_NETWORK if the proxy
+# network is not named dokploy-network.
+
+services:
+  web:
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-dokploy-network}
