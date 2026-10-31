@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,15 +11,16 @@ export const Route = createFileRoute("/import")({
 function ImportPage() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const strategies = useQuery(trpc.import.strategies.queryOptions());
 	const [busy, setBusy] = useState(false);
 
 	const upload = useMutation({
 		...trpc.import.upload.mutationOptions(),
 		onSuccess: async (result) => {
-			toast.success(
-				`Imported ${result.importedCount} via ${result.strategy.label} (${result.skippedDuplicateCount} duplicates skipped)`,
-			);
+			const skipped =
+				result.skippedDuplicateCount > 0
+					? ` ${result.skippedDuplicateCount} already imported.`
+					: "";
+			toast.success(`Imported ${result.importedCount} transactions.${skipped}`);
 			await queryClient.invalidateQueries();
 		},
 		onError: (error) => {
@@ -45,8 +46,7 @@ function ImportPage() {
 			<header className="mb-section-head">
 				<h1 className="mb-title">Import</h1>
 				<p className="mb-lede">
-					Drop CSV statements. Moneyball auto-detects the source and dedupes on
-					fingerprint.
+					Add a bank statement. Matching rows that are already here are skipped.
 				</p>
 			</header>
 
@@ -63,33 +63,10 @@ function ImportPage() {
 					{busy ? "Importing…" : "Choose CSV or PDF files"}
 				</span>
 				<span className="mb-dropzone-copy">
-					Supported today: Neo credit CSV, Scotia chequing CSV, Scotia credit
-					CSV. Neo Everyday PDF is detected but not parsed yet.
+					Neo credit, Scotiabank chequing, and Scotiabank credit CSV files. Neo
+					Everyday PDF is recognized but not read yet.
 				</span>
 			</label>
-
-			<div className="mb-panel mt-6">
-				<h2 className="mb-panel-title">Strategies</h2>
-				<ul className="divide-y divide-[var(--mb-line)]">
-					{strategies.data?.map((strategy) => (
-						<li
-							key={strategy.id}
-							className="flex items-center justify-between py-3"
-						>
-							<div>
-								<p className="font-medium">{strategy.label}</p>
-								<p className="text-sm text-[var(--mb-muted)]">
-									{strategy.accountHint.institution} ·{" "}
-									{strategy.accountHint.kind}
-								</p>
-							</div>
-							<code className="text-xs text-[var(--mb-muted)]">
-								{strategy.id}
-							</code>
-						</li>
-					))}
-				</ul>
-			</div>
 		</section>
 	);
 }
