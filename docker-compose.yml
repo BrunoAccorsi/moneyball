@@ -28,7 +28,7 @@ services:
       PORT: "3000"
       HOST: "0.0.0.0"
       CURSOR_API_KEY: ${CURSOR_API_KEY:-}
-      CURSOR_MODEL: ${CURSOR_MODEL:-composer-2.5}
+      CURSOR_MODEL: ${CURSOR_MODEL:-composer-2}
     labels:
       - traefik.enable=true
       - traefik.http.routers.moneyball.rule=Host(`moneyball.localhost`)

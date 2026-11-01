@@ -11,6 +11,7 @@ import {
 	cursorApiKey,
 	NullAiInsightsProvider,
 } from "#/domain/insights/ai";
+import { DEFAULT_REVIEW_MODEL } from "#/domain/insights/cloud-agent";
 import { buildMonthOverview } from "#/domain/insights/overview";
 import {
 	parseMonthlyReview,
@@ -44,13 +45,32 @@ async function loadRows() {
 	}));
 }
 
+function postgresCode(error: unknown): string | undefined {
+	let current: unknown = error;
+	for (
+		let depth = 0;
+		depth < 5 && current && typeof current === "object";
+		depth += 1
+	) {
+		if ("code" in current && typeof current.code === "string")
+			return current.code;
+		current = "cause" in current ? current.cause : undefined;
+	}
+	return undefined;
+}
+
 export async function getSavingsTargetCents(): Promise<number> {
-	const [row] = await db
-		.select()
-		.from(budgetSettings)
-		.where(eq(budgetSettings.id, 1))
-		.limit(1);
-	return row?.monthlySavingsTargetCents ?? 0;
+	try {
+		const [row] = await db
+			.select()
+			.from(budgetSettings)
+			.where(eq(budgetSettings.id, 1))
+			.limit(1);
+		return row?.monthlySavingsTargetCents ?? 0;
+	} catch (error) {
+		if (postgresCode(error) === "42P01") return 0;
+		throw error;
+	}
 }
 
 export async function setSavingsTargetCents(targetCents: number) {
@@ -100,11 +120,18 @@ function cachedStatus(row: {
 
 export async function getMonthlyReview(month: string): Promise<ReviewStatus> {
 	if (!cursorApiKey()) return { state: "unconfigured" };
-	const [row] = await db
-		.select()
-		.from(aiReviews)
-		.where(eq(aiReviews.month, month))
-		.limit(1);
+	let row: { payload: unknown; model: string; createdAt: Date } | undefined;
+	try {
+		const [found] = await db
+			.select()
+			.from(aiReviews)
+			.where(eq(aiReviews.month, month))
+			.limit(1);
+		row = found;
+	} catch (error) {
+		if (postgresCode(error) === "42P01") return { state: "missing" };
+		throw error;
+	}
 	if (!row) return { state: "missing" };
 	try {
 		return cachedStatus(row);
@@ -120,7 +147,7 @@ async function writeReview(month: string): Promise<ReviewStatus> {
 	if (!provider.configured) return { state: "unconfigured" };
 	const overview = await getMonthOverview(month);
 	const review = await provider.generateReview(toReviewContext(overview));
-	const model = provider.modelId ?? "composer-2.5";
+	const model = provider.modelId ?? DEFAULT_REVIEW_MODEL;
 	const createdAt = new Date();
 	await db
 		.insert(aiReviews)

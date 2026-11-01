@@ -52,7 +52,7 @@ Sample fixtures live in `fixtures/`. Categorization seeds come from `fixtures/ru
 
 `docker compose up --build` runs Postgres + the Nitro app. Traefik labels are on the `app` service; point a host at port 3000 or let Traefik route `moneyball.localhost`.
 
-Set `DATABASE_URL`. Monthly reviews run when `CURSOR_API_KEY` is set (optional `CURSOR_MODEL`, default `composer-2.5`). With no key, Overview shows how to add one.
+Set `DATABASE_URL`. Monthly reviews run when `CURSOR_API_KEY` is set (optional `CURSOR_MODEL`, default `composer-2`). With no key, Overview shows how to add one. Run `pnpm db:push` after pulling so the savings target and review cache tables exist.
 
 ## Brand
 
@@ -60,4 +60,4 @@ Tokens live in `src/styles/theme.css` (synced from `public/brand/theme.css`). UI
 
 ## AI reviews
 
-Overview asks the Cursor SDK for a monthly review (summary, patterns, anomalies, saving ideas) from aggregated totals and merchant names. Reviews are cached per month. Set `CURSOR_API_KEY` on the server. `CURSOR_MODEL` is optional.
+Overview asks the Cloud Agents API (`POST /v1/agents`, model `composer-2`) for a monthly review from aggregated totals and merchant names. Reviews are cached per month. Set `CURSOR_API_KEY` on the server. `CURSOR_MODEL` is optional.

@@ -24,7 +24,6 @@
     "check": "biome check --write"
   },
   "dependencies": {
-    "@cursor/sdk": "^1.2.0",
     "@faker-js/faker": "^10.3.0",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",
