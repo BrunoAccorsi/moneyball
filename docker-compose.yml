@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: moneyball
+      POSTGRES_PASSWORD: moneyball
+      POSTGRES_DB: moneyball
+    volumes:
+      - moneyball_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moneyball -d moneyball"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://moneyball:moneyball@db:5432/moneyball
+      NODE_ENV: production
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      CURSOR_API_KEY: ${CURSOR_API_KEY:-}
+      CURSOR_MODEL: ${CURSOR_MODEL:-composer-2}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.moneyball.rule=Host(`moneyball.localhost`)
+      - traefik.http.routers.moneyball.entrypoints=web
+      - traefik.http.services.moneyball.loadbalancer.server.port=3000
+    ports:
+      - "3000:3000"
+
+volumes:
+  moneyball_pg:
